@@ -62,8 +62,6 @@
 	function setFoodListener() {
 	  $('#food-form').on('submit', function (event) {
 	    event.preventDefault();
-	    // let name = $.trim($('[name=food-name]').val());
-	    // let calories = $.trim($('[name=calories]').val());
 	    let name = $('[name=food-name]');
 	    let calories = $('[name=calorie-amount]');
 	    validateInputs(name, calories);
@@ -82,11 +80,11 @@
 	}
 
 	function foodRows(food) {
-	  $("#foods").prepend(`<tr>
+	  $("#foods-header").after(`<tr>
 	        <td> ${food.name} </td>
 	        <td> ${food.calories} </td>
 	        <td>
-	          <img class="delete-icon" src="/assets/minus-icon.png"/>
+	          <img class="delete-icon" src="/images/minus-icon.png"/>
 	        </td>
 	      </tr> `);
 	};
