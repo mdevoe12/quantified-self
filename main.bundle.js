@@ -84,7 +84,7 @@
 	        <td> ${food.name} </td>
 	        <td> ${food.calories} </td>
 	        <td>
-	          <img class="delete-icon" src="/images/minus-icon.png"/>
+	          <img class="delete-icon" src="https://raw.githubusercontent.com/mdevoe12/quantified-self/master/images/minus-icon.png"/>
 	        </td>
 	      </tr> `);
 	};
