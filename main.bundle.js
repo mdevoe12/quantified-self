@@ -46,6 +46,9 @@
 
 	__webpack_require__(1);
 	__webpack_require__(3);
+	__webpack_require__(4);
+	__webpack_require__(5);
+	__webpack_require__(9);
 
 /***/ }),
 /* 1 */
@@ -53,35 +56,6 @@
 
 	const $ = __webpack_require__(2);
 	const api = 'https://lit-caverns-20261.herokuapp.com';
-
-	$(document).ready(function () {
-	  getFoods();
-	  setFoodListener();
-	});
-
-	function setFoodListener() {
-	  $('#food-form').on('submit', function (event) {
-	    event.preventDefault();
-	    let name = $('[name=food-name]');
-	    let calories = $('[name=calorie-amount]');
-	    validateInputs(name, calories);
-	    postFood(name, calories);
-	  });
-	};
-
-	function getFoods() {
-	  $.ajax({
-	    method: 'GET',
-	    url: api + '/api/v1/foods',
-	    success: function (data) {
-	      // debugger
-	      data = data.sort(function (a, b) {
-	        return a.id - b.id;
-	      });
-	      data.forEach(foodRows);
-	    }
-	  });
-	}
 
 	function foodRows(food) {
 	  let foodId = food.id;
@@ -174,29 +148,7 @@
 	  });
 	}
 
-	function postFood(name, calories) {
-	  $.ajax({
-	    method: 'POST',
-	    url: api + '/api/v1/foods',
-	    data: { food: { name: $.trim(name.val()), calories: $.trim(calories.val()) } },
-	    success: function (data) {
-	      foodRows(data);
-	      $('.error-message').remove();
-	      name.val("");
-	      calories.val("");
-	    }
-	  });
-	}
-
-	function validateInputs(name, calories) {
-	  let args = Array.from(arguments);
-	  args.forEach(function (element) {
-	    let message = element.attr('name').replace('-', ' ');
-	    if ($.trim(element.val()) === '') {
-	      element.after(`<p class="error-message">Please enter a ${message}</p>`);
-	    }
-	  });
-	}
+	module.exports = { foodRows, iconListener, focusListener, deleteRow };
 
 /***/ }),
 /* 2 */
@@ -10461,13 +10413,137 @@
 /* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
+	const shared = __webpack_require__(1);
+
+	const $ = __webpack_require__(2);
+	const api = 'https://lit-caverns-20261.herokuapp.com';
+
+	function setFoodListener() {
+	  $('#food-form').on('submit', function (event) {
+	    event.preventDefault();
+	    let name = $('[name=food-name]');
+	    let calories = $('[name=calorie-amount]');
+	    validateInputs(name, calories);
+	    postFood(name, calories);
+	  });
+	};
+
+	function filterFoods() {
+	  $('#filter').keyup(function () {
+	    hideFoods($(this).val().toLowerCase());
+	  });
+	}
+
+	function hideFoods(string) {
+	  $('[name=name]').each(function () {
+	    if ($(this).text().toLowerCase().includes(string)) {
+	      $(this).parent().show();
+	    } else {
+	      $(this).parent().hide();
+	    }
+	  });
+	}
+
+	function getFoods() {
+	  $.ajax({
+	    method: 'GET',
+	    url: api + '/api/v1/foods',
+	    success: function (data) {
+	      data = data.sort(function (a, b) {
+	        return a.id - b.id;
+	      });
+
+	      data.forEach(shared.foodRows);
+	    }
+	  });
+	}
+
+	function postFood(name, calories) {
+	  $.ajax({
+	    method: 'POST',
+	    url: api + '/api/v1/foods',
+	    data: { food: { name: $.trim(name.val()), calories: $.trim(calories.val()) } },
+	    success: function (data) {
+	      shared.foodRows(data);
+	      $('.error-message').remove();
+	      name.val("");
+	      calories.val("");
+	    }
+	  });
+	}
+
+	function validateInputs(name, calories) {
+	  let args = Array.from(arguments);
+	  args.forEach(function (element) {
+	    let message = element.attr('name').replace('-', ' ');
+	    if ($.trim(element.val()) === '') {
+	      element.after(`<p class="error-message">Please enter a ${message}</p>`);
+	    }
+	  });
+	}
+
+	module.exports = { getFoods, setFoodListener, filterFoods };
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	const shared = __webpack_require__(1);
+	const $ = __webpack_require__(2);
+	const api = 'https://lit-caverns-20261.herokuapp.com';
+
+	function getMeals() {
+	  $.ajax({
+	    method: 'GET',
+	    url: api + '/api/v1/meals',
+	    success: function (data) {
+	      populateMeals(data);
+	    }
+	  });
+	}
+
+	function populateMeals(data) {
+	  data.forEach(function (meal) {
+	    meal.foods.forEach(function (food) {
+	      $(`#${meal.name.toLowerCase()} #foods-header`).after(`<tr class='food-row' data-id=${food.id}>
+	            <td name='name' contenteditable='true'> ${food.name} </td>
+	            <td name='calories' contenteditable='true'> ${food.calories} </td>
+	            <td>
+	              <img class="delete-icon" src="https://raw.githubusercontent.com/mdevoe12/quantified-self/master/images/minus-icon.png"/>
+	            </td>
+	          </tr> `);
+	      shared.focusListener(food.id);
+	      mealIconListener(food.id, meal);
+	    });
+	  });
+	}
+
+	function mealIconListener(foodId, meal) {
+	  $(`#${meal.name.toLowerCase()} [data-id=${foodId}] .delete-icon`).on('click', function (event) {
+	    let $target = $(event.target);
+	    $.ajax({
+	      method: 'DELETE',
+	      url: api + `/api/v1/meals/${meal.id}/foods/${foodId}`,
+	      success: function () {
+	        $target.parent().parent().remove();
+	      }
+	    });
+	  });
+	}
+
+	module.exports = { getMeals };
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports, __webpack_require__) {
+
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 
 	// load the styles
-	var content = __webpack_require__(4);
+	var content = __webpack_require__(6);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(6)(content, {});
+	var update = __webpack_require__(8)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
@@ -10484,10 +10560,10 @@
 	}
 
 /***/ }),
-/* 4 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(5)();
+	exports = module.exports = __webpack_require__(7)();
 	// imports
 
 
@@ -10498,7 +10574,7 @@
 
 
 /***/ }),
-/* 5 */
+/* 7 */
 /***/ (function(module, exports) {
 
 	/*
@@ -10554,7 +10630,7 @@
 
 
 /***/ }),
-/* 6 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/*
@@ -10804,6 +10880,25 @@
 			URL.revokeObjectURL(oldSrc);
 	}
 
+
+/***/ }),
+/* 9 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	const $ = __webpack_require__(2);
+	const foodFunctions = __webpack_require__(3);
+	const diaryFunctions = __webpack_require__(4);
+	const foodsURL = "http://localhost:8080/foods.html";
+
+	$(document).ready(function () {
+	  if (document.URL == foodsURL) {
+	    foodFunctions.getFoods();
+	  } else {
+	    diaryFunctions.getMeals();
+	  }
+	  foodFunctions.setFoodListener();
+	  foodFunctions.filterFoods();
+	});
 
 /***/ })
 /******/ ]);
