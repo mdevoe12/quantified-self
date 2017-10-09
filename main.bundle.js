@@ -10888,10 +10888,9 @@
 	const $ = __webpack_require__(2);
 	const foodFunctions = __webpack_require__(3);
 	const diaryFunctions = __webpack_require__(4);
-	const foodsURL = "http://localhost:8080/foods.html";
 
 	$(document).ready(function () {
-	  if (document.URL == foodsURL) {
+	  if (document.URL.includes("foods")) {
 	    foodFunctions.getFoods();
 	  } else {
 	    diaryFunctions.getMeals();
