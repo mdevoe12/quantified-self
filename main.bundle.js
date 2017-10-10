@@ -58,6 +58,7 @@
 	const api = 'https://lit-caverns-20261.herokuapp.com';
 
 	function foodRows(food) {
+	  let foodName = food.name;
 	  let foodId = food.id;
 	  $("#foods-header").after(`<tr class='food-row' data-id=${foodId}>
 	        <td name='name' contenteditable='true'> ${food.name} </td>
@@ -84,17 +85,20 @@
 	    $(this).children('[name]').each(function (index) {
 	      toPass.food[$(this).attr('name')] = $.trim($(this).text());
 	    });
-
-	    $.ajax({
-	      method: 'PATCH',
-	      url: api + `/api/v1/foods/${id}`,
-	      data: toPass,
-	      success: function (data) {
-	        console.log(`${data.name} successfully updated!`);
-	      }
-	    });
+	    updateFood(id, toPass);
 	  });
 	};
+
+	function updateFood(id, toPass) {
+	  $.ajax({
+	    method: 'PATCH',
+	    url: api + `/api/v1/foods/${id}`,
+	    data: toPass,
+	    success: function (data) {
+	      console.log(`${data.name} successfully updated!`);
+	    }
+	  });
+	}
 
 	function deleteRow() {
 	  let foodId = $(this).parent().parent().data().id;
@@ -10452,7 +10456,6 @@
 	      data = data.sort(function (a, b) {
 	        return a.id - b.id;
 	      });
-
 	      data.forEach(shared.foodRows);
 	    }
 	  });
@@ -10492,6 +10495,9 @@
 	const $ = __webpack_require__(2);
 	const api = 'https://lit-caverns-20261.herokuapp.com';
 
+	let consumedCalories = 0;
+	let goalCalories = 2000;
+
 	function getMeals() {
 	  $.ajax({
 	    method: 'GET',
@@ -10504,6 +10510,7 @@
 
 	function populateMeals(data) {
 	  data.forEach(function (meal) {
+	    let mealCalories = 0;
 	    meal.foods.forEach(function (food) {
 	      $(`#${meal.name.toLowerCase()} #foods-header`).after(`<tr class='food-row' data-id=${food.id}>
 	            <td name='name' contenteditable='true'> ${food.name} </td>
@@ -10512,10 +10519,36 @@
 	              <img class="delete-icon" src="https://raw.githubusercontent.com/mdevoe12/quantified-self/master/images/minus-icon.png"/>
 	            </td>
 	          </tr> `);
+	      mealCalories += food.calories;
 	      shared.focusListener(food.id);
 	      mealIconListener(food.id, meal);
 	    });
+	    consumedCalories += mealCalories;
+	    $(`#${meal.name.toLowerCase()} tr`).last().after(`<tr class=meal-${meal.name}>
+	            <td> Total Calories </td>
+	            <td id="meal-calories"> ${mealCalories} </td>
+	           </tr>
+	           <tr class=remaining-${meal.name}>
+	            <td> Remaining Calories </td>
+	            <td id="remaining-calories"> TBD </td>
+	           </tr>`);
 	  });
+	  populateTotals();
+	}
+
+	function populateTotals() {
+	  $('#totals').after(`<tr>
+	      <td> Goal Calories </td>
+	      <td> ${goalCalories} </td>
+	     </tr>
+	     <tr>
+	       <td> Calories Consumed </td>
+	       <td> ${consumedCalories} </td>
+	     </tr>
+	     <tr>
+	      <td> Remaining Calories </td>
+	      <td> ${goalCalories - consumedCalories} </td>
+	     </tr>`);
 	}
 
 	function mealIconListener(foodId, meal) {
