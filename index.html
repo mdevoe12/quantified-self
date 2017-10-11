@@ -7,8 +7,33 @@
 <body>
   <h1>My Calories</h1>
 
+  <h2>Foods</h2>
+
+  <a href="./foods.html" class="button"><b>Create Food</b></a>
+
+  <div class="filter">
+    Filter by Name:<br>
+    <input type="text" name="filter-name" id="filter"/>
+  </div>
+
+  <table id="foods">
+    <tr id="foods-header">
+      <th></th>
+      <th>Name</th>
+      <th>Calories</th>
+    </tr>
+  </table>
+
+  <div>
+    <h2>Add Selected Foods to:</h2>
+    <a href="#" class="button" data-mealid="1">Breakfast</a>
+    <a href="#" class="button" data-mealid="3">Lunch</a>
+    <a href="#" class="button" data-mealid="4">Dinner</a>
+    <a href="#" class="button" data-mealid="2">Snack</a>
+  </div>
+
   <h2>Breakfast</h2>
-  <table id="breakfast">
+  <table id="breakfast" class="meal-table">
     <tr id="foods-header">
       <th>Name</th>
       <th>Calories</th>
@@ -17,7 +42,7 @@
 
 
   <h2>Lunch</h2>
-  <table id="lunch">
+  <table id="lunch" class="meal-table">
     <tr id="foods-header">
       <th>Name</th>
       <th>Calories</th>
@@ -25,7 +50,7 @@
   </table>
 
   <h2>Dinner</h2>
-  <table id="dinner">
+  <table id="dinner" class="meal-table">
     <tr id="foods-header">
       <th>Name</th>
       <th>Calories</th>
@@ -33,7 +58,7 @@
   </table>
 
   <h2>Snacks</h2>
-  <table id="snack">
+  <table id="snack" class="meal-table">
     <tr id="foods-header">
       <th>Name</th>
       <th>Calories</th>
@@ -42,7 +67,7 @@
 
   <h2>Totals</h2>
   <table id="totals">
-    
+
   </table>
 
   <script src="main.bundle.js"></script>
