@@ -67,24 +67,22 @@
 	          <img class="delete-icon" src="https://raw.githubusercontent.com/mdevoe12/quantified-self/master/images/minus-icon.png"/>
 	        </td>
 	      </tr> `);
-	  iconListener(foodId);
-	  focusListener(foodId);
 	};
 
-	function iconListener(foodId) {
-	  $(`[data-id=${foodId}] .delete-icon`).on('click', deleteRow);
+	function iconListener() {
+	  $('#foods').on('click', '.delete-icon', deleteRow);
 	}
 
-	function focusListener(foodId) {
-	  $(`[data-id=${foodId}]`).focusout(function (event) {
-	    let id = $(this).data().id;
-	    let text = event.target.value;
-	    $(event.target).parent().html(text);
+	function focusListener() {
+	  $('#foods').on('focusout', `[data-id] td`, function (event) {
+	    let id = $(event.target).parent().data().id;
+	    let text = $(event.target).text();
 	    let toPass = { food: {} };
 
-	    $(this).children('[name]').each(function (index) {
+	    $(event.target).parent().children('[name]').each(function (index) {
 	      toPass.food[$(this).attr('name')] = $.trim($(this).text());
 	    });
+	    $(event.target).html(text);
 	    updateFood(id, toPass);
 	  });
 	};
@@ -152,7 +150,12 @@
 	  });
 	}
 
-	module.exports = { foodRows, iconListener, focusListener, deleteRow };
+	function setListeners() {
+	  focusListener();
+	  iconListener();
+	}
+
+	module.exports = { foodRows, setListeners, deleteRow };
 
 /***/ }),
 /* 2 */
@@ -10439,7 +10442,7 @@
 	}
 
 	function hideFoods(string) {
-	  $('[name=name]').each(function () {
+	  $('#foods [name=name]').each(function () {
 	    if ($(this).text().toLowerCase().includes(string)) {
 	      $(this).parent().show();
 	    } else {
@@ -10521,16 +10524,14 @@
 	  createTable() {
 	    this.foods.forEach(food => {
 	      $(`#${this.name.toLowerCase()} #foods-header`).after(`<tr class='food-row' data-id=${food.id}>
-	            <td name='name' contenteditable='true'> ${food.name} </td>
-	            <td name='calories' contenteditable='true'> ${food.calories} </td>
+	            <td name='name'> ${food.name} </td>
+	            <td name='calories'> ${food.calories} </td>
 	            <td>
 	              <img class="delete-icon" src="https://raw.githubusercontent.com/mdevoe12/quantified-self/master/images/minus-icon.png"/>
 	            </td>
 	          </tr> `);
-	      shared.focusListener(food.id);
 	      mealIconListener(food.id, this);
 	    });
-
 	    $(`#${this.name.toLowerCase()} tr`).last().after(`<tr class=meal-${this.name}>
 	            <td> Total Calories </td>
 	            <td id="meal-calories"> ${this.mealCalories()} </td>
@@ -10561,8 +10562,17 @@
 	    success: function (data) {
 	      meals = createMeals(data);
 	      populateMeals(meals);
+	      if ($('[type=checkbox]').length < 1) {
+	        changeFoods();
+	      }
 	    }
 	  });
+	}
+
+	function changeFoods() {
+	  $('#foods [data-id] td').removeAttr('contenteditable');
+	  $('#foods img').remove();
+	  $('#foods [data-id]').prepend('<input type="checkbox"></input>');
 	}
 
 	function populateMeals(meals) {
@@ -10573,7 +10583,7 @@
 	}
 
 	function populateTotals() {
-	  $('#totals').after(`<tr>
+	  $('#totals').append(`<tr>
 	      <td> Goal Calories </td>
 	      <td> ${goalCalories} </td>
 	     </tr>
@@ -10595,12 +10605,36 @@
 	      url: api + `/api/v1/meals/${meal.id}/foods/${foodId}`,
 	      success: function () {
 	        $target.parent().parent().remove();
+	        updatePage();
 	      }
 	    });
 	  });
 	}
 
-	module.exports = { getMeals };
+	function addFoodListener() {
+	  $('[data-mealid]').on('click', function (event) {
+	    event.preventDefault();
+	    let mealId = $(this).data().mealid;
+	    $(':checked').each(function () {
+	      let foodId = $(this).parent().data().id;
+	      $.ajax({
+	        method: 'POST',
+	        url: api + `/api/v1/meals/${mealId}/foods/${foodId}`,
+	        success: function () {
+	          updatePage();
+	        }
+	      });
+	    });
+	  });
+	}
+
+	function updatePage() {
+	  $('.meal-table').children().children('#foods-header').siblings().remove();
+	  $('#totals').children().remove();
+	  getMeals();
+	  $(':checked').prop('checked', false);
+	}
+	module.exports = { getMeals, mealIconListener, addFoodListener, changeFoods };
 
 /***/ }),
 /* 5 */
@@ -10637,7 +10671,7 @@
 
 
 	// module
-	exports.push([module.id, ".delete-icon {\n  height: 15px; }\n\n.form {\n  margin-bottom: 30px; }\n", ""]);
+	exports.push([module.id, ".delete-icon {\n  height: 15px; }\n\n.form {\n  margin-bottom: 30px; }\n\n.button {\n  background-color: #5CCCF0;\n  color: black;\n  border: 2px solid black;\n  padding: 10px 32px;\n  text-align: center;\n  text-decoration: none;\n  display: inline-block;\n  font-size: 12px;\n  margin: 20px 2px;\n  border-radius: 15px; }\n", ""]);
 
 	// exports
 
@@ -10957,14 +10991,18 @@
 	const $ = __webpack_require__(2);
 	const foodFunctions = __webpack_require__(3);
 	const diaryFunctions = __webpack_require__(4);
+	const shared = __webpack_require__(1);
 
 	$(document).ready(function () {
-	  if (document.URL.includes("foods")) {
+	  if (document.URL.includes('foods')) {
 	    foodFunctions.getFoods();
 	  } else {
+	    foodFunctions.getFoods();
 	    diaryFunctions.getMeals();
 	  }
 	  foodFunctions.setFoodListener();
+	  diaryFunctions.addFoodListener();
+	  shared.setListeners();
 	  foodFunctions.filterFoods();
 	});
 
