@@ -45,10 +45,10 @@
 /***/ (function(module, exports, __webpack_require__) {
 
 	__webpack_require__(1);
-	__webpack_require__(3);
 	__webpack_require__(4);
 	__webpack_require__(5);
-	__webpack_require__(9);
+	__webpack_require__(6);
+	__webpack_require__(10);
 
 /***/ }),
 /* 1 */
@@ -56,6 +56,7 @@
 
 	const $ = __webpack_require__(2);
 	const api = 'https://lit-caverns-20261.herokuapp.com';
+	const requests = __webpack_require__(3);
 
 	function foodRows(food) {
 	  let foodName = food.name;
@@ -82,80 +83,21 @@
 	    $(event.target).parent().children('[name]').each(function (index) {
 	      toPass.food[$(this).attr('name')] = $.trim($(this).text());
 	    });
-	    $(event.target).html(text);
-	    updateFood(id, toPass);
+	    requests.updateFood(id, toPass);
 	  });
 	};
-
-	function updateFood(id, toPass) {
-	  $.ajax({
-	    method: 'PATCH',
-	    url: api + `/api/v1/foods/${id}`,
-	    data: toPass,
-	    success: function (data) {
-	      console.log(`${data.name} successfully updated!`);
-	    }
-	  });
-	}
 
 	function deleteRow() {
 	  let foodId = $(this).parent().parent().data().id;
-	  deleteMeals(foodId);
+	  requests.getMealsForItemDelete(foodId);
 	};
-
-	function deleteFoodMeals(meals, foodId) {
-	  meals.forEach(function (meal, index) {
-	    $.ajax({
-	      method: 'DELETE',
-	      url: api + `/api/v1/meals/${meal.id}/foods/${foodId}`,
-	      success: function () {
-	        if (index === meals.length - 1) {
-	          deleteFood(foodId);
-	        }
-	      }
-	    });
-	  });
-	};
-
-	function deleteMeals(foodId) {
-	  $.ajax({
-	    method: 'GET',
-	    url: api + '/api/v1/meals',
-	    success: function (data) {
-	      meals = findMealsWithFood(foodId, data);
-	      if (meals.length) {
-	        deleteFoodMeals(meals, foodId);
-	      } else {
-	        deleteFood(foodId);
-	      }
-	    }
-	  });
-	};
-
-	function findMealsWithFood(foodId, meals) {
-	  return meals.filter(function (meal) {
-	    return meal.foods.some(function (food) {
-	      return food.id === foodId;
-	    });
-	  });
-	}
-
-	function deleteFood(id) {
-	  $.ajax({
-	    method: 'DELETE',
-	    url: api + `/api/v1/foods/${id}`,
-	    success: function () {
-	      $(`[data-id=${id}]`).remove();
-	    }
-	  });
-	}
 
 	function setListeners() {
-	  focusListener();
 	  iconListener();
+	  focusListener();
 	}
 
-	module.exports = { foodRows, setListeners, deleteRow };
+	module.exports = { foodRows, deleteRow, setListeners };
 
 /***/ }),
 /* 2 */
@@ -10420,8 +10362,78 @@
 /* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
+	const $ = __webpack_require__(2);
 	const shared = __webpack_require__(1);
+	const api = 'https://lit-caverns-20261.herokuapp.com';
 
+	function getMealsForItemDelete(foodId) {
+	  $.ajax({
+	    method: 'GET',
+	    url: api + '/api/v1/meals',
+	    success: function (data) {
+	      meals = findMealsWithFood(foodId, data);
+	      if (meals.length) {
+	        deleteFoodMeals(meals, foodId);
+	      } else {
+	        deleteFood(foodId);
+	      }
+	    }
+	  });
+	}
+
+	function findMealsWithFood(foodId, meals) {
+	  return meals.filter(function (meal) {
+	    return meal.foods.some(function (food) {
+	      return food.id === foodId;
+	    });
+	  });
+	}
+
+	function deleteFoodMeals(meals, foodId) {
+	  $.when(...deleteFoodMealCalls(meals, foodId)).done(deleteFood(foodId));
+	};
+
+	function deleteFoodMealCalls(meals, foodId) {
+	  return meals.map(function (meal, index) {
+	    return $.ajax({
+	      method: 'DELETE',
+	      url: api + `/api/v1/meals/${meal.id}/foods/${foodId}`
+	    });
+	  });
+	}
+
+	function deleteFood(id) {
+	  $.ajax({
+	    method: 'DELETE',
+	    url: api + `/api/v1/foods/${id}`
+	  }).done(() => $(`[data-id=${id}]`).remove()).catch(showError);
+	}
+
+	function showError() {
+	  $('body').prepend('<div class="error-flash">Please Try Again</div>');
+	  setTimeout(function () {
+	    $('.error-flash').remove();
+	  }, 3000);
+	}
+
+	function updateFood(id, toPass) {
+	  $.ajax({
+	    method: 'PATCH',
+	    url: api + `/api/v1/foods/${id}`,
+	    data: toPass,
+	    success: function (data) {
+	      console.log(`${data.name} successfully updated!`);
+	    }
+	  });
+	}
+
+	module.exports = { getMealsForItemDelete, api, updateFood };
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	const shared = __webpack_require__(1);
 	const $ = __webpack_require__(2);
 	const api = 'https://lit-caverns-20261.herokuapp.com';
 
@@ -10491,7 +10503,7 @@
 	module.exports = { getFoods, setFoodListener, filterFoods };
 
 /***/ }),
-/* 4 */
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	const shared = __webpack_require__(1);
@@ -10615,17 +10627,22 @@
 	  $('[data-mealid]').on('click', function (event) {
 	    event.preventDefault();
 	    let mealId = $(this).data().mealid;
-	    $(':checked').each(function () {
-	      let foodId = $(this).parent().data().id;
-	      $.ajax({
-	        method: 'POST',
-	        url: api + `/api/v1/meals/${mealId}/foods/${foodId}`,
-	        success: function () {
-	          updatePage();
-	        }
-	      });
+	    addFoodsToMeal(mealId);
+	  });
+	}
+
+	function returnAddFoodCalls(mealId) {
+	  return $(':checked').map(function (index) {
+	    let foodId = $(this).parent().data().id;
+	    return $.ajax({
+	      method: 'POST',
+	      url: api + `/api/v1/meals/${mealId}/foods/${foodId}`
 	    });
 	  });
+	}
+
+	function addFoodsToMeal(mealId) {
+	  $.when(...returnAddFoodCalls(mealId)).done(updatePage());
 	}
 
 	function updatePage() {
@@ -10637,16 +10654,16 @@
 	module.exports = { getMeals, mealIconListener, addFoodListener, changeFoods };
 
 /***/ }),
-/* 5 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 
 	// load the styles
-	var content = __webpack_require__(6);
+	var content = __webpack_require__(7);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(8)(content, {});
+	var update = __webpack_require__(9)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
@@ -10663,21 +10680,21 @@
 	}
 
 /***/ }),
-/* 6 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(7)();
+	exports = module.exports = __webpack_require__(8)();
 	// imports
 
 
 	// module
-	exports.push([module.id, ".delete-icon {\n  height: 15px; }\n\n.form {\n  margin-bottom: 30px; }\n\n.button {\n  background-color: #5CCCF0;\n  color: black;\n  border: 2px solid black;\n  padding: 10px 32px;\n  text-align: center;\n  text-decoration: none;\n  display: inline-block;\n  font-size: 12px;\n  margin: 20px 2px;\n  border-radius: 15px; }\n", ""]);
+	exports.push([module.id, ".delete-icon {\n  height: 15px; }\n\n.form {\n  margin-bottom: 30px; }\n\n.error-flash {\n  text-align: center;\n  background-color: rgba(200, 50, 50, 0.4); }\n\n.button {\n  background-color: #5CCCF0;\n  color: black;\n  border: 2px solid black;\n  padding: 10px 32px;\n  text-align: center;\n  text-decoration: none;\n  display: inline-block;\n  font-size: 12px;\n  margin: 20px 2px;\n  border-radius: 15px; }\n", ""]);
 
 	// exports
 
 
 /***/ }),
-/* 7 */
+/* 8 */
 /***/ (function(module, exports) {
 
 	/*
@@ -10733,7 +10750,7 @@
 
 
 /***/ }),
-/* 8 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/*
@@ -10985,12 +11002,12 @@
 
 
 /***/ }),
-/* 9 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	const $ = __webpack_require__(2);
-	const foodFunctions = __webpack_require__(3);
-	const diaryFunctions = __webpack_require__(4);
+	const foodFunctions = __webpack_require__(4);
+	const diaryFunctions = __webpack_require__(5);
 	const shared = __webpack_require__(1);
 
 	$(document).ready(function () {
