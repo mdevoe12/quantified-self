@@ -1,4 +1,4 @@
-# Project Title
+# Quantified Self
 
 Quantified Self is an experimental playground to test your AJAX, jQuery and Javascript skills. This repo makes calls to a Heroku-hosted Express App.
 
