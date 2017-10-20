@@ -52,12 +52,6 @@ http://localhost:8080
 
 
 
-## Built With
-
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
-
 ## Contributing
 
 If you would like to contribute to this project, please fork this repository, clone the forked repository and submit a pull request tagging @MikelSage or @mdevoe12.
