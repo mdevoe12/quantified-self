@@ -55,7 +55,7 @@
 /***/ (function(module, exports, __webpack_require__) {
 
 	const $ = __webpack_require__(2);
-	const api = 'https://lit-caverns-20261.herokuapp.com';
+	const api = 'http://localhost:3000';
 	const requests = __webpack_require__(3);
 
 	function foodRows(food) {
@@ -10364,7 +10364,7 @@
 
 	const $ = __webpack_require__(2);
 	const shared = __webpack_require__(1);
-	const api = 'https://lit-caverns-20261.herokuapp.com';
+	const api = 'http://localhost:3000';
 
 	function getMealsForItemDelete(foodId) {
 	  $.ajax({
@@ -10435,7 +10435,7 @@
 
 	const shared = __webpack_require__(1);
 	const $ = __webpack_require__(2);
-	const api = 'https://lit-caverns-20261.herokuapp.com';
+	const api = 'http://localhost:3000';
 
 	function setFoodListener() {
 	  $('#food-form').on('submit', function (event) {
@@ -10508,7 +10508,7 @@
 
 	const shared = __webpack_require__(1);
 	const $ = __webpack_require__(2);
-	const api = 'https://lit-caverns-20261.herokuapp.com';
+	const api = 'http://localhost:3000';
 
 	let meals;
 	let goalCalories = 2000;
