@@ -55,7 +55,7 @@
 /***/ (function(module, exports, __webpack_require__) {
 
 	const $ = __webpack_require__(2);
-	const api = 'http://localhost:3000';
+	const api = 'http://morning-beach-24613.herokuapp.com';
 	const requests = __webpack_require__(3);
 
 	function foodRows(food) {
@@ -64,7 +64,7 @@
 	  $("#foods-header").after(`<tr class='food-row' data-id=${foodId}>
 	        <td name='name' contenteditable='true'> ${food.name} </td>
 	        <td name='calories' contenteditable='true'> ${food.calories} </td>
-	        <td>
+	        <td id='icon-td'>
 	          <img class="delete-icon" src="https://raw.githubusercontent.com/mdevoe12/quantified-self/master/images/minus-icon.png"/>
 	        </td>
 	      </tr> `);
@@ -97,7 +97,13 @@
 	  focusListener();
 	}
 
-	module.exports = { foodRows, deleteRow, setListeners };
+	function sortById(data) {
+	  return data.sort(function (a, b) {
+	    return a.id - b.id;
+	  });
+	}
+
+	module.exports = { foodRows, deleteRow, setListeners, sortById };
 
 /***/ }),
 /* 2 */
@@ -10364,7 +10370,7 @@
 
 	const $ = __webpack_require__(2);
 	const shared = __webpack_require__(1);
-	const api = 'http://localhost:3000';
+	const api = 'http://morning-beach-24613.herokuapp.com';
 
 	function getMealsForItemDelete(foodId) {
 	  $.ajax({
@@ -10390,7 +10396,9 @@
 	}
 
 	function deleteFoodMeals(meals, foodId) {
-	  $.when(...deleteFoodMealCalls(meals, foodId)).done(deleteFood(foodId));
+	  $.when(...deleteFoodMealCalls(meals, foodId)).done(function () {
+	    deleteFood(foodId);
+	  });
 	};
 
 	function deleteFoodMealCalls(meals, foodId) {
@@ -10435,7 +10443,7 @@
 
 	const shared = __webpack_require__(1);
 	const $ = __webpack_require__(2);
-	const api = 'http://localhost:3000';
+	const api = 'http://morning-beach-24613.herokuapp.com';
 
 	function setFoodListener() {
 	  $('#food-form').on('submit', function (event) {
@@ -10464,13 +10472,11 @@
 	}
 
 	function getFoods() {
-	  $.ajax({
+	  return $.ajax({
 	    method: 'GET',
 	    url: api + '/api/v1/foods',
 	    success: function (data) {
-	      data = data.sort(function (a, b) {
-	        return a.id - b.id;
-	      });
+	      data = shared.sortById(data);
 	      data.forEach(shared.foodRows);
 	    }
 	  });
@@ -10508,7 +10514,7 @@
 
 	const shared = __webpack_require__(1);
 	const $ = __webpack_require__(2);
-	const api = 'http://localhost:3000';
+	const api = 'http://morning-beach-24613.herokuapp.com';
 
 	let meals;
 	let goalCalories = 2000;
@@ -10523,10 +10529,12 @@
 	class Meal {
 	  constructor(meal) {
 	    this.name = meal.name;
-	    this.foods = meal.foods;
+	    this.foods = shared.sortById(meal.foods);
 	    this.goalCalories = goalKey[this.name];
 	    this.id = meal.id;
+	    this.styleClass = styleClass(this.goalCalories, this.mealCalories());
 	  }
+
 	  mealCalories() {
 	    return this.foods.reduce(function (totalCals, food) {
 	      return totalCals + food.calories;
@@ -10550,8 +10558,16 @@
 	           </tr>
 	           <tr class=remaining-${this.name}>
 	            <td> Remaining Calories </td>
-	            <td id="remaining-calories"> ${this.goalCalories - this.mealCalories()} </td>
+	            <td id="remaining-calories" class=${this.styleClass}> ${this.goalCalories - this.mealCalories()} </td>
 	           </tr>`);
+	  }
+	}
+
+	function styleClass(goalCals, mealCals) {
+	  if (goalCals - mealCals < 0) {
+	    return "remaining-calories-negative";
+	  } else {
+	    return "remaining-calories-positive";
 	  }
 	}
 
@@ -10568,23 +10584,20 @@
 	}
 
 	function getMeals() {
-	  $.ajax({
+	  return $.ajax({
 	    method: 'GET',
 	    url: api + '/api/v1/meals',
 	    success: function (data) {
 	      meals = createMeals(data);
 	      populateMeals(meals);
-	      if ($('[type=checkbox]').length < 1) {
-	        changeFoods();
-	      }
 	    }
 	  });
 	}
 
 	function changeFoods() {
 	  $('#foods [data-id] td').removeAttr('contenteditable');
-	  $('#foods img').remove();
-	  $('#foods [data-id]').prepend('<input type="checkbox"></input>');
+	  $('#foods #icon-td').remove();
+	  $('#foods [data-id]').prepend('<td><input type="checkbox"></input></td>');
 	}
 
 	function populateMeals(meals) {
@@ -10595,6 +10608,7 @@
 	}
 
 	function populateTotals() {
+	  let tdClass = styleClass(goalCalories, consumedCalories());
 	  $('#totals').append(`<tr>
 	      <td> Goal Calories </td>
 	      <td> ${goalCalories} </td>
@@ -10605,7 +10619,7 @@
 	     </tr>
 	     <tr>
 	      <td> Remaining Calories </td>
-	      <td> ${goalCalories - consumedCalories()} </td>
+	      <td class=${tdClass}> ${goalCalories - consumedCalories()} </td>
 	     </tr>`);
 	}
 
@@ -10633,7 +10647,7 @@
 
 	function returnAddFoodCalls(mealId) {
 	  return $(':checked').map(function (index) {
-	    let foodId = $(this).parent().data().id;
+	    let foodId = $(this).parent().parent().data().id;
 	    return $.ajax({
 	      method: 'POST',
 	      url: api + `/api/v1/meals/${mealId}/foods/${foodId}`
@@ -10642,7 +10656,9 @@
 	}
 
 	function addFoodsToMeal(mealId) {
-	  $.when(...returnAddFoodCalls(mealId)).done(updatePage());
+	  $.when(...returnAddFoodCalls(mealId)).then(function () {
+	    updatePage();
+	  });
 	}
 
 	function updatePage() {
@@ -10688,7 +10704,7 @@
 
 
 	// module
-	exports.push([module.id, ".delete-icon {\n  height: 15px; }\n\n.form {\n  margin-bottom: 30px; }\n\n.error-flash {\n  text-align: center;\n  background-color: rgba(200, 50, 50, 0.4); }\n\n.button {\n  background-color: #5CCCF0;\n  color: black;\n  border: 2px solid black;\n  padding: 10px 32px;\n  text-align: center;\n  text-decoration: none;\n  display: inline-block;\n  font-size: 12px;\n  margin: 20px 2px;\n  border-radius: 15px; }\n", ""]);
+	exports.push([module.id, ".delete-icon {\n  height: 15px; }\n\n.error-flash {\n  text-align: center;\n  background-color: rgba(200, 50, 50, 0.4); }\n\n.button {\n  background-color: #5CCCF0;\n  color: black;\n  border: 2px solid black;\n  padding: 10px 32px;\n  text-align: center;\n  text-decoration: none;\n  display: inline-block;\n  font-size: 12px;\n  margin: 20px 2px;\n  border-radius: 15px; }\n\n.asc:after {\n  content: \"\\25B2\"; }\n\n.desc:after {\n  content: \"\\25BC\"; }\n\n.remaining-calories-positive {\n  color: green; }\n\n.remaining-calories-negative {\n  color: red; }\n\n.filter, .form, h1, h2 {\n  color: #333;\n  font-family: Helvetica, Arial, sans-serif;\n  width: 640px;\n  margin-bottom: 30px; }\n\ntable {\n  color: #333;\n  font-family: Helvetica, Arial, sans-serif;\n  width: 640px;\n  border-collapse: collapse;\n  border-spacing: 0; }\n\ntd, th {\n  border: 1px solid #CCC;\n  height: 30px; }\n\nth {\n  background: #F3F3F3;\n  font-weight: bold; }\n\ntd {\n  background: #FAFAFA;\n  text-align: center; }\n", ""]);
 
 	// exports
 
@@ -11014,8 +11030,43 @@
 	  if (document.URL.includes('foods')) {
 	    foodFunctions.getFoods();
 	  } else {
-	    foodFunctions.getFoods();
-	    diaryFunctions.getMeals();
+	    $.when(foodFunctions.getFoods(), diaryFunctions.getMeals()).done(function () {
+	      diaryFunctions.changeFoods();
+	      let $unsorted = $('#foods #foods-header').siblings();
+	      $('#foods #foods-header').on('click', '#sortable', function (event) {
+	        let $header = $(event.target);
+	        let $foods = $(event.delegateTarget).siblings();
+	        let $sorted;
+	        if ($header.is('.asc')) {
+	          $header.attr('class', 'desc');
+	          $sorted = $foods.sort(function (a, b) {
+	            return parseInt($(a).children('td:eq(2)').text()) - parseInt($(b).children('td:eq(2)').text());
+	          });
+	          $foods.remove();
+	          $sorted.each(function (index) {
+	            $('#foods #foods-header').after($(this));
+	          });
+	        } else if ($header.is('.desc')) {
+	          $header.attr('class', '');
+	          $sorted = $foods.sort(function (a, b) {
+	            return parseInt($(a).data().id) - parseInt($(b).data().id);
+	          });
+	          $foods.remove();
+	          $sorted.each(function (index) {
+	            $('#foods #foods-header').after($(this));
+	          });
+	        } else {
+	          $header.attr('class', 'asc');
+	          $sorted = $foods.sort(function (a, b) {
+	            return parseInt($(b).children('td:eq(2)').text()) - parseInt($(a).children('td:eq(2)').text());
+	          });
+	          $foods.remove();
+	          $sorted.each(function (index) {
+	            $('#foods #foods-header').after($(this));
+	          });
+	        }
+	      });
+	    });
 	  }
 	  foodFunctions.setFoodListener();
 	  diaryFunctions.addFoodListener();
