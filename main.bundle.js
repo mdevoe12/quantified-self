@@ -55,7 +55,7 @@
 /***/ (function(module, exports, __webpack_require__) {
 
 	const $ = __webpack_require__(2);
-	const api = 'http://morning-beach-24613.herokuapp.com';
+	const api = 'https://morning-beach-24613.herokuapp.com';
 	const requests = __webpack_require__(3);
 
 	function foodRows(food) {
@@ -10370,7 +10370,7 @@
 
 	const $ = __webpack_require__(2);
 	const shared = __webpack_require__(1);
-	const api = 'http://morning-beach-24613.herokuapp.com';
+	const api = 'https://morning-beach-24613.herokuapp.com';
 
 	function getMealsForItemDelete(foodId) {
 	  $.ajax({
@@ -10443,7 +10443,7 @@
 
 	const shared = __webpack_require__(1);
 	const $ = __webpack_require__(2);
-	const api = 'http://morning-beach-24613.herokuapp.com';
+	const api = 'https://morning-beach-24613.herokuapp.com';
 
 	function setFoodListener() {
 	  $('#food-form').on('submit', function (event) {
@@ -10514,7 +10514,7 @@
 
 	const shared = __webpack_require__(1);
 	const $ = __webpack_require__(2);
-	const api = 'http://morning-beach-24613.herokuapp.com';
+	const api = 'https://morning-beach-24613.herokuapp.com';
 
 	let meals;
 	let goalCalories = 2000;
